@@ -1,0 +1,73 @@
+/*
+ * Image Editor
+ * Copyright © 2026 Md. Sahabul. All rights reserved.
+ * Designed & developed by Md. Sahabul.
+ */
+
+.ie-admin-layout {
+    display: flex;
+    min-height: calc(100vh - var(--ie-toolbar-h));
+}
+
+.ie-admin-sidebar {
+    width: 220px;
+    background: var(--ie-dark);
+    border-right: 1px solid var(--ie-panel-border);
+    padding: 1rem 0;
+    flex-shrink: 0;
+}
+
+.ie-admin-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem 1.25rem;
+    color: #9ca3af;
+    font-size: .88rem;
+    transition: background .1s, color .1s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+.ie-admin-sidebar-link:hover,
+.ie-admin-sidebar-link.active {
+    background: rgba(79,70,229,.15);
+    color: #c4b5fd;
+}
+
+.ie-admin-content {
+    flex: 1;
+    padding: 2rem 1.5rem;
+    overflow-y: auto;
+}
+
+.ie-stat-card {
+    background: var(--ie-panel);
+    border: 1px solid var(--ie-panel-border);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+}
+
+.ie-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #f3f4f6;
+}
+
+.ie-stat-label { font-size: .8rem; color: #6b7280; }
+
+/* table */
+.ie-admin-table { color: #e5e7eb; }
+.ie-admin-table thead th {
+    background: var(--ie-dark);
+    color: #9ca3af;
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    border-color: var(--ie-panel-border);
+}
+.ie-admin-table td { border-color: var(--ie-panel-border); vertical-align: middle; }
+.ie-admin-table tbody tr:hover { background: rgba(255,255,255,.03); }

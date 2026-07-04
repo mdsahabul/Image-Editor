@@ -1,0 +1,148 @@
+/*
+ * Image Editor
+ * Copyright © 2026 Md. Sahabul. All rights reserved.
+ * Designed & developed by Md. Sahabul.
+ */
+
+/* ── Base ──────────────────────────────────────────────────────────── */
+:root {
+    --ie-primary:       #4f46e5;
+    --ie-primary-dark:  #3730a3;
+    --ie-secondary:     #6b7280;
+    --ie-dark:          #111827;
+    --ie-darker:        #0d1117;
+    --ie-panel:         #1e2330;
+    --ie-panel-border:  #2d3451;
+    --ie-canvas-bg:     #2a2d3e;
+    --ie-sidebar-w:     260px;
+    --ie-toolbar-h:     52px;
+    --ie-properties-w:  270px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    background: var(--ie-darker);
+    color: #e5e7eb;
+    -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--ie-primary); text-decoration: none; }
+a:hover { color: var(--ie-primary-dark); }
+
+/* ── Auth pages ────────────────────────────────────────────────────── */
+.ie-auth-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d1117 0%, #1a1f35 100%);
+}
+
+.ie-auth-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--ie-panel);
+    border: 1px solid var(--ie-panel-border);
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+}
+
+.ie-auth-logo {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--ie-primary);
+    letter-spacing: -0.02em;
+}
+
+/* ── Navbar ────────────────────────────────────────────────────────── */
+.ie-navbar {
+    background: var(--ie-dark);
+    border-bottom: 1px solid var(--ie-panel-border);
+    height: var(--ie-toolbar-h);
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.ie-navbar-brand {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ie-primary) !important;
+}
+
+/* ── Dashboard ─────────────────────────────────────────────────────── */
+.ie-dashboard {
+    min-height: calc(100vh - var(--ie-toolbar-h));
+    background: var(--ie-darker);
+    padding: 2rem 1.5rem;
+}
+
+.ie-project-card {
+    background: var(--ie-panel);
+    border: 1px solid var(--ie-panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform .15s, box-shadow .15s;
+    cursor: pointer;
+}
+
+.ie-project-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,.4);
+}
+
+.ie-project-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    background: var(--ie-canvas-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4b5563;
+    font-size: 2.5rem;
+}
+
+.ie-project-info { padding: .75rem 1rem; }
+.ie-project-title { font-size: .9rem; font-weight: 600; color: #f3f4f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ie-project-meta  { font-size: .75rem; color: #6b7280; }
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+.ie-footer {
+    background: var(--ie-dark);
+    border-top: 1px solid var(--ie-panel-border);
+    text-align: center;
+    padding: 1rem;
+    color: #6b7280;
+    font-size: .8rem;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────── */
+.btn-ie-primary {
+    background: var(--ie-primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: .45rem 1rem;
+    font-weight: 500;
+    transition: background .15s;
+}
+.btn-ie-primary:hover { background: var(--ie-primary-dark); color: #fff; }
+
+/* ── Toasts ────────────────────────────────────────────────────────── */
+.Toastify__toast { font-size: .87rem; }
+
+/* ── Loader ────────────────────────────────────────────────────────── */
+.ie-loader-overlay {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.6);
+    z-index: 9999;
+}

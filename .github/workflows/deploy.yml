@@ -1,0 +1,145 @@
+# Image Editor
+# Copyright © 2026 Md. Sahabul. All rights reserved.
+# Designed & developed by Md. Sahabul.
+
+name: CI / CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Backend tests ────────────────────────────────────────────────────
+  backend-tests:
+    name: Laravel Tests (PHP 8.2)
+    runs-on: ubuntu-22.04
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: image_editor_test
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, pdo, pdo_mysql, bcmath, gd, zip, redis
+          coverage: none
+
+      - name: Install Composer dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy .env for tests
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=image_editor_test/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=secret/'            .env
+          sed -i 's/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/'    .env
+          sed -i 's/CACHE_DRIVER=.*/CACHE_DRIVER=array/'           .env
+
+      - name: Run migrations
+        working-directory: backend
+        run: php artisan migrate --seed --force
+
+      - name: Run PHPUnit tests
+        working-directory: backend
+        run: php artisan test --parallel
+
+  # ── Frontend build ───────────────────────────────────────────────────
+  frontend-build:
+    name: React Build (Node 20)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build React app
+        working-directory: frontend
+        env:
+          REACT_APP_API_BASE_URL: ${{ secrets.REACT_APP_API_BASE_URL }}
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-build
+          path: frontend/build
+          retention-days: 1
+
+  # ── Deploy to VPS ────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to VPS
+    needs: [backend-tests, frontend-build]
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download React build
+        uses: actions/download-artifact@v4
+        with:
+          name: react-build
+          path: frontend/build
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_SSH_KEY }}
+          port:     ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            set -e
+            cd /var/www/image-editor
+
+            echo "==> Pulling latest code"
+            git pull origin main
+
+            echo "==> Backend: install deps + migrate"
+            cd backend
+            composer install --no-dev --optimize-autoloader --no-interaction
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan queue:restart
+            cd ..
+
+            echo "==> Copying React build"
+            rsync -av --delete frontend/build/ backend/public/app/
+
+            echo "==> Reload PHP-FPM"
+            sudo systemctl reload php8.2-fpm
+
+            echo "==> Restart queue workers via Supervisor"
+            sudo supervisorctl restart image-editor-worker:*
+
+            echo "==> Deploy complete!"

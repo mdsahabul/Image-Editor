@@ -1,0 +1,16 @@
+# Image Editor - Backend Dev Dockerfile
+# Copyright © 2026 Md. Sahabul. All rights reserved.
+# Designed & developed by Md. Sahabul.
+
+FROM php:8.2-cli
+
+RUN apt-get update && apt-get install -y \
+    git curl zip unzip libpng-dev libonig-dev libxml2-dev \
+    libzip-dev libjpeg-dev libwebp-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install pdo_mysql mbstring gd zip opcache bcmath
+
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+WORKDIR /var/www/html
+EXPOSE 8000

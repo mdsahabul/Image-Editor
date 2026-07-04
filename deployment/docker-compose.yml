@@ -1,0 +1,124 @@
+# Image Editor - Docker Compose (local development)
+# Copyright © 2026 Md. Sahabul. All rights reserved.
+# Designed & developed by Md. Sahabul.
+
+version: "3.9"
+
+services:
+
+  # ── MySQL ───────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: image_editor
+      MYSQL_USER: image_editor
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # ── Laravel API ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+      - ./backend/storage:/var/www/html/storage
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_KEY: base64:changeme==
+      DB_HOST: mysql
+      DB_DATABASE: image_editor
+      DB_USERNAME: image_editor
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+      AI_SERVICE_URL: http://ai-service:8001
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: >
+      sh -c "composer install &&
+             php artisan migrate --seed --force &&
+             php artisan storage:link &&
+             php artisan serve --host=0.0.0.0 --port=8000"
+
+  # ── Queue worker ─────────────────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      APP_ENV: local
+      APP_KEY: base64:changeme==
+      DB_HOST: mysql
+      DB_DATABASE: image_editor
+      DB_USERNAME: image_editor
+      DB_PASSWORD: secret
+      REDIS_HOST: redis
+      CACHE_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      AI_SERVICE_URL: http://ai-service:8001
+    depends_on:
+      - backend
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=180
+
+  # ── AI service ───────────────────────────────────────────────────────
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./ai-service/models:/app/models
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --workers 1
+
+  # ── React frontend (dev server) ──────────────────────────────────────
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_BASE_URL: http://localhost:8000/api
+    command: sh -c "npm install && npm start"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  redis_data:
